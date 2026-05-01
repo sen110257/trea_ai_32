@@ -1,16 +1,19 @@
 <template>
   <div class="instrument-card card" @click="handleClick">
     <div class="card-image-wrapper">
-      <img 
-        v-if="instrument.image" 
-        :src="instrument.image" 
-        :alt="instrument.name"
-        class="card-image"
-        @error="handleImageError"
-        :class="{ 'image-loaded': imageLoaded }"
-      />
-      <div v-else class="card-image-fallback">
-        {{ getCategoryIcon() }}
+      <div class="card-image-container">
+        <img 
+          v-if="instrument.image && !imageError"
+          :src="instrument.image" 
+          :alt="instrument.name"
+          class="card-image"
+          @load="handleImageLoad"
+          @error="handleImageError"
+          :class="{ 'image-loaded': imageLoaded }"
+        />
+        <div v-if="!instrument.image || imageError" class="card-image-fallback">
+          {{ getCategoryIcon() }}
+        </div>
       </div>
       <div v-if="showFavorite && isFavorited" class="favorite-badge">
         ❤️
@@ -68,6 +71,7 @@ const router = useRouter()
 const dataStore = useDataStore()
 
 const imageLoaded = ref(false)
+const imageError = ref(false)
 
 const isFavorited = computed(() => {
   return dataStore.isFavorite(props.instrument.id)
@@ -101,8 +105,12 @@ function getCategoryIcon() {
   return icons[props.instrument.category] || '🎵'
 }
 
-function handleImageError(event) {
-  event.target.style.display = 'none'
+function handleImageLoad() {
+  imageLoaded.value = true
+}
+
+function handleImageError() {
+  imageError.value = true
 }
 
 function handleClick() {
@@ -121,9 +129,18 @@ function handleClick() {
   overflow: hidden;
 }
 
-.card-image {
+.card-image-container {
+  position: relative;
   width: 100%;
   aspect-ratio: 16/10;
+}
+
+.card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   background-color: var(--bg-secondary);
   opacity: 0;
@@ -132,6 +149,20 @@ function handleClick() {
 
 .card-image.image-loaded {
   opacity: 1;
+}
+
+.card-image-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+  font-size: 48px;
+  color: var(--text-light);
 }
 
 .favorite-badge {
