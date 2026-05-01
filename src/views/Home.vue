@@ -38,16 +38,24 @@
       </div>
       <div class="hot-list">
         <div 
-          v-for="instrument in hotInstruments.slice(0, 4)" 
+          v-for="instrument in hotInstrumentsList.slice(0, 4)" 
           :key="instrument.id"
           class="hot-item"
           @click="goToDetail(instrument.id)"
         >
-          <img 
-            :src="instrument.image" 
-            :alt="instrument.name"
-            class="hot-image"
-          />
+          <div class="hot-image-wrapper">
+            <img 
+              v-if="instrument.image"
+              :src="instrument.image" 
+              :alt="instrument.name"
+              class="hot-image"
+              @load="handleImageLoad($event, instrument.id)"
+              @error="handleHotImageError($event, instrument)"
+            />
+            <div v-else class="hot-image-placeholder">
+              {{ getCategoryIcon(instrument.category) }}
+            </div>
+          </div>
           <div class="hot-name">{{ instrument.name }}</div>
         </div>
       </div>
@@ -216,6 +224,32 @@ function pullToRefresh() {
   }
 }
 
+function getCategoryIcon(category) {
+  const icons = {
+    string: '🎻',
+    wind: '🎷',
+    percussion: '🥁',
+    niche: '🎭',
+    traditional: '🏮'
+  }
+  return icons[category] || '🎵'
+}
+
+function handleImageLoad(event, instrumentId) {
+  event.target.style.opacity = '1'
+}
+
+function handleHotImageError(event, instrument) {
+  event.target.style.display = 'none'
+  const wrapper = event.target.closest('.hot-image-wrapper')
+  if (wrapper) {
+    const placeholder = document.createElement('div')
+    placeholder.className = 'hot-image-placeholder'
+    placeholder.textContent = getCategoryIcon(instrument.category)
+    wrapper.appendChild(placeholder)
+  }
+}
+
 watch(activeCategory, () => {
   loadInstruments()
 })
@@ -379,12 +413,36 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
-.hot-image {
+.hot-image-wrapper {
   width: 100%;
   aspect-ratio: 1;
+  position: relative;
+  margin-bottom: var(--spacing-xs);
+}
+
+.hot-image {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: var(--border-radius-md);
-  margin-bottom: var(--spacing-xs);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.hot-image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+  border-radius: var(--border-radius-md);
+  font-size: 32px;
+  color: var(--text-light);
   box-shadow: 0 2px 8px var(--shadow-color);
 }
 
